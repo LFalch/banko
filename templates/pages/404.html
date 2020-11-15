@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+{% block header %}
+404 File Not Found
+{% endblock header %}
+{% block title %}
+404 File Not Found
+{% endblock title %}
+{% block content %}
+{{macros::errorpage(error="Siden, du bad om, kunne ikke findes!")}}
+{% endblock content %}

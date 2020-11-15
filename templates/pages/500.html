@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+{% block header %}
+500 Server Error
+{% endblock header %}
+{% block title %}
+500 Server Error
+{% endblock title %}
+{% block content %}
+{{macros::errorpage(error="Der opstod en intern fejl på serveren!")}}
+{% endblock content %}

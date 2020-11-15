@@ -1,0 +1,20 @@
+[package]
+name = "banko"
+version = "0.1.0"
+authors = ["LFalch <lucas@wasd.dk>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+rocket = "0.4"
+diesel = "1"
+tera = "0.11"
+serde = "1"
+serde_derive = "1"
+serde_json = "1"
+lazy_static = "1"
+
+[dependencies.rocket_contrib]
+version = "0.4"
+default-features = false
+features = ["diesel_sqlite_pool"]

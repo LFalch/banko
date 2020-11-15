@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="da">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="Julebanko">
+    <meta name="author" content="Orangenose">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+    <title>Julebanko {% block title %}{% endblock title %}</title>
+    {% block head %}{% endblock head %}
+</head>
+
+<body>
+    <h2>{% block header %}{% endblock header %}</h2>
+    <div>
+        {% block content %}{% endblock content %}
+    </div>
+    <footer class="footer">
+        <p>banko v{{version}} &copy; Orangenose 2020</p>
+    </footer>
+</body>
+
+</html>
