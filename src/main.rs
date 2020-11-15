@@ -1,8 +1,6 @@
 #![feature(decl_macro, proc_macro_hygiene)]
 #[macro_use]
 extern crate tera;
-// #[macro_use]
-extern crate serde_derive;
 #[macro_use]
 extern crate rocket;
 // #[macro_use] extern crate rocket_contrib;

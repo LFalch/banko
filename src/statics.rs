@@ -7,7 +7,7 @@ pub fn static_handler(file: PathBuf) -> Option<NamedFile> {
 
 #[get("/favicon.ico")]
 pub fn favicon_handler() -> Option<NamedFile> {
-    static_handler(PathBuf::new().join("dynateam.ico"))
+    static_handler(PathBuf::new().join("favicon.ico"))
 }
 
 #[get("/robots.txt")]
