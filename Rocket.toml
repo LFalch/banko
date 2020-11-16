@@ -1,0 +1,5 @@
+[development]
+port = 8000
+
+[development.databases]
+sqlite = { url = "db/banko.sqlite3" }

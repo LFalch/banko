@@ -1,26 +1,53 @@
 #![feature(decl_macro, proc_macro_hygiene)]
+#[allow(unused_imports)]
 #[macro_use]
 extern crate tera;
 #[macro_use]
 extern crate rocket;
-// #[macro_use] extern crate rocket_contrib;
-// #[macro_use] extern crate diesel;
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
 
-use std::{
-    path::{Path, PathBuf},
-    collections::HashMap,
-};
-use rocket::{
-    response::{Content, NamedFile, Response},
-    http::{Status, ContentType}
-};
-use tera::{Tera, Context, Value};
+use crate::schema::numbers;
+use diesel::prelude::*;
+use diesel::{Insertable, Queryable};
 use lazy_static::*;
+use rand::Rng;
+use rocket::{
+    get,
+    http::{ContentType, Status},
+    response::{Content, NamedFile, Response},
+};
+use rocket_contrib::databases::{database, diesel::SqliteConnection};
+
+use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
+use tera::{Context, Tera, Value};
 
 mod errors;
+mod schema;
 mod statics;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
+#[database("sqlite")]
+struct DbConn(SqliteConnection);
+
+#[derive(Queryable, Serialize, Debug)]
+struct Numbers {
+    id: i32,
+    number_drawn: i32,
+    draw_date: i32,
+}
+
+#[derive(Deserialize, Insertable)]
+#[table_name = "numbers"]
+struct NewNumber {
+    number_drawn: i32,
+}
 
 pub type Res<'a> = Result<Response<'a>, Status>;
 pub type ContRes<'a> = Content<Res<'a>>;
@@ -29,7 +56,7 @@ fn da_genitive_filter(value: Value, _args: HashMap<String, Value>) -> tera::Resu
     let mut name = try_get_value!("genitiv", "value", String, value);
     match name.chars().last() {
         Some('s') | Some('x') | Some('z') => name.push('\''),
-        _ => name.push('s')
+        _ => name.push('s'),
     }
     Ok(Value::String(name))
 }
@@ -58,7 +85,7 @@ pub fn tera_render(template: &str, c: Context) -> Res<'static> {
     use std::io::Cursor;
     match TERA.render(template, &c) {
         Ok(s) => Response::build().sized_body(Cursor::new(s)).ok(),
-        Err(_) => Err(Status::InternalServerError)
+        Err(_) => Err(Status::InternalServerError),
     }
 }
 
@@ -69,7 +96,10 @@ pub fn create_context(current_page: &str) -> Context {
 }
 
 pub fn respond_page(page: &'static str, c: Context) -> ContRes<'static> {
-    Content(ContentType::HTML, tera_render(&format!("pages/{}.html", page), c))
+    Content(
+        ContentType::HTML,
+        tera_render(&format!("pages/{}.html", page), c),
+    )
 }
 
 #[get("/")]
@@ -81,7 +111,7 @@ pub fn root<'a>() -> ContRes<'a> {
 pub fn draw<'a>() -> ContRes<'a> {
     let mut context = create_context("draw");
     let mut numbers = [[0 as usize; 11]; 9];
-    let drawn = [1,5,57,2,9,23,10,90,87,14,20];
+    let drawn = [1, 5, 57, 2, 9, 23, 10, 90, 87, 14, 20];
     for y in 1..=10 {
         for x in 0..=9 {
             let num = (x * 10) + y;
@@ -95,16 +125,43 @@ pub fn draw<'a>() -> ContRes<'a> {
     respond_page("draw", context)
 }
 
+#[get("/add/<number>")]
+fn add_number(number: i32) -> String {
+    let mut rng = rand::thread_rng();
+    for _ in 0..number {
+        // TODO: Limit to number 1..=90
+        // TODO: Add them to Numbers and redraw if already drawn
+        // TODO: Limit number of draws to numbers of available
+        println!("Random u32: {}", rng.gen::<u32>());
+    }
+    format!("Added {} numbers to the list!", number)
+}
+
+#[get("/list")]
+fn get_numbers(conn: DbConn) -> String {
+    let numbers_drawn = numbers::table
+        .order(numbers::columns::id.desc())
+        .load::<Numbers>(&*conn)
+        .unwrap();
+    format!("{:?}", numbers_drawn)
+}
+
 fn main() {
     use crate::errors::*;
     rocket::ignite()
-        .mount("/", routes![
-            root,
-            draw,
-            crate::statics::robots_handler,
-            crate::statics::favicon_handler,
-            crate::statics::static_handler
-        ])
+        .attach(DbConn::fairing())
+        .mount(
+            "/",
+            routes![
+                root,
+                draw,
+                add_number,
+                get_numbers,
+                crate::statics::robots_handler,
+                crate::statics::favicon_handler,
+                crate::statics::static_handler
+            ],
+        )
         .register(catchers![page_not_found, bad_request, server_error])
         .launch();
 }
