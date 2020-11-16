@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+{% block title %}
+Træk nye tal
+{% endblock title %}
+
+{% block header %}
+Træk nye tal
+{% endblock header %}
+
+{% block content %}
+<h3>Tal allerede trukket:</h3>
+<table class="table table-striped">
+    <tbody>
+      {% for col in numbers %}
+        <tr>
+            {% for row in col %}
+            <td>{% if row != 0 %}&nbsp;{{ row }}&nbsp;{% else %}&nbsp;&nbsp;&nbsp;{% endif %}</td>
+            {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+    </table> 
+    <h3>Ny trækning</h3>
+    <form method="post" action="/draw/submit">
+            Antal numre:<br/>
+            <input type="text" name="amount" value="" required>
+            <br/>
+      <br/>
+      <input type="submit" name="submit" value="Træk!">
+    <form>
+{% endblock content %}
