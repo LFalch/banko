@@ -77,11 +77,30 @@ pub fn root<'a>() -> ContRes<'a> {
     respond_page("root", create_context("root"))
 }
 
+#[get("/draw")]
+pub fn draw<'a>() -> ContRes<'a> {
+    let mut context = create_context("draw");
+    let mut numbers = [[0 as usize; 11]; 9];
+    let drawn = [1,5,57,2,9,23,10,90,87,14,20];
+    for y in 1..=10 {
+        for x in 0..=9 {
+            let num = (x * 10) + y;
+            // println!("{}, {}", x , y);
+            if drawn.contains(&num) {
+                numbers[x][y] = num;
+            }
+        }
+    }
+    context.insert("numbers", &numbers);
+    respond_page("draw", context)
+}
+
 fn main() {
     use crate::errors::*;
     rocket::ignite()
         .mount("/", routes![
             root,
+            draw,
             crate::statics::robots_handler,
             crate::statics::favicon_handler,
             crate::statics::static_handler
