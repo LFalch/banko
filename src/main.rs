@@ -7,6 +7,8 @@ extern crate rocket;
 #[macro_use]
 extern crate diesel;
 extern crate dotenv;
+#[macro_use(c)]
+extern crate cute;
 
 use crate::schema::numbers;
 use diesel::prelude::*;
@@ -34,7 +36,7 @@ mod statics;
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 #[database("sqlite")]
-struct DbConn(SqliteConnection);
+pub struct DbConn(SqliteConnection);
 
 #[derive(Queryable, Serialize, Debug)]
 struct Numbers {
@@ -102,16 +104,24 @@ pub fn respond_page(page: &'static str, c: Context) -> ContRes<'static> {
     )
 }
 
+fn numbers_drawn(conn: DbConn) -> Vec<Numbers> {
+    numbers::table
+        .order(numbers::columns::id.desc())
+        .load::<Numbers>(&*conn)
+        .unwrap()
+}
+
 #[get("/")]
 pub fn root<'a>() -> ContRes<'a> {
     respond_page("root", create_context("root"))
 }
 
 #[get("/draw")]
-pub fn draw<'a>() -> ContRes<'a> {
+pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
     let mut context = create_context("draw");
-    let mut numbers = [[0 as usize; 11]; 9];
-    let drawn = [1, 5, 57, 2, 9, 23, 10, 90, 87, 14, 20];
+    let mut numbers = [[0; 11]; 9];
+    let drawn = c![x.number_drawn as usize, for x in numbers_drawn(conn)];
+    // [1, 5, 57, 2, 9, 23, 10, 90, 87, 14, 20];
     for y in 1..=10 {
         for x in 0..=9 {
             let num = (x * 10) + y;
@@ -139,11 +149,7 @@ fn add_number(number: i32) -> String {
 
 #[get("/list")]
 fn get_numbers(conn: DbConn) -> String {
-    let numbers_drawn = numbers::table
-        .order(numbers::columns::id.desc())
-        .load::<Numbers>(&*conn)
-        .unwrap();
-    format!("{:?}", numbers_drawn)
+    format!("{:?}", numbers_drawn(conn))
 }
 
 fn main() {
