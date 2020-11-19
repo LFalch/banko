@@ -19,7 +19,7 @@ Forside
 {% endblock header %}
 
 {% block content %}
-<h3>Tak der er trukket ud:</h3>
+<h3>Alle tal trukket:</h3>
 <table class="table table-striped">
   <tbody>
     {% for col in numbers %}
@@ -31,4 +31,15 @@ Forside
     {% endfor %}
   </tbody>
 </table>
+<p>Træningsrækkefølge:</p>
+<table>
+  <tr>
+    {% for number in chrono_numbers %}
+    <td>
+      {{ number }}
+    </td>
+    {% endfor %}
+  </tr>
+</table>
+</p>
 {% endblock content %}

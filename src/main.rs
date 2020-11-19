@@ -125,6 +125,7 @@ pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
         }
     }
     context.insert("numbers", &numbers);
+    context.insert("chrono_numbers", &drawn);
     respond_page("draw", context)
 }
 
@@ -171,7 +172,6 @@ fn main() {
         .mount(
             "/",
             routes![
-                root,
                 draw,
                 add_number,
                 get_numbers,
