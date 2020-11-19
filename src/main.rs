@@ -33,7 +33,7 @@ mod errors;
 mod schema;
 mod statics;
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[database("sqlite")]
 pub struct DbConn(SqliteConnection);
@@ -128,7 +128,7 @@ pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
             // println!("{}, {}", x , y);
             if drawn.contains(&num) {
                 numbers[x][y] = num;
-            }
+            };
         }
     }
     context.insert("numbers", &numbers);
@@ -136,13 +136,26 @@ pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
 }
 
 #[get("/add/<number>")]
-fn add_number(number: i32) -> String {
-    let mut rng = rand::thread_rng();
-    for _ in 0..number {
-        // TODO: Limit to number 1..=90
-        // TODO: Add them to Numbers and redraw if already drawn
-        // TODO: Limit number of draws to numbers of available
-        println!("Random u32: {}", rng.gen::<u32>());
+fn add_number(number: i32, conn: DbConn) -> String {
+    let drawn = c![x.number_drawn as usize, for x in numbers_drawn(conn)];
+    let mut full_pool = Vec::new();
+    for i in 1..=90 {
+        full_pool.push(i)
+    }
+    let mut pool = Vec::<usize>::new();
+    for &x in full_pool.iter() {
+        if !drawn.contains(&x) {
+            pool.push(x as usize);
+        }
+    }
+    if number < 70 && number > 0 {
+        let mut rng = rand::thread_rng();
+        // FIXME: It's possible to draw the same number multiple times
+        // TODO: Add drawn numbers to DB
+        let numbers: Vec<usize> = (0..number).map(|_| rng.gen_range(1, pool.len())).collect();
+        println!("Found {:?}", &numbers);
+    } else {
+        return format!("{} is an invalid number!", number);
     }
     format!("Added {} numbers to the list!", number)
 }
