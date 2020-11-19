@@ -112,11 +112,6 @@ fn numbers_drawn(conn: DbConn) -> Vec<Numbers> {
 }
 
 #[get("/")]
-pub fn root<'a>() -> ContRes<'a> {
-    respond_page("root", create_context("root"))
-}
-
-#[get("/draw")]
 pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
     let mut context = create_context("draw");
     let mut numbers = [[0; 10]; 9];
@@ -124,7 +119,6 @@ pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
     for y in 0..=9 {
         for x in 0..=9 {
             let num = (x * 10) + y + 1;
-            // println!("{}, {}", x , y);
             if drawn.contains(&num) {
                 numbers[x][y] = num;
             };
@@ -151,8 +145,14 @@ fn add_number(number: i32, conn: DbConn) -> String {
         let mut rng = rand::thread_rng();
         // FIXME: It's possible to draw the same number multiple times
         let numbers: Vec<usize> = (0..number).map(|_| rng.gen_range(1, pool.len())).collect();
-        // TODO: Add drawn numbers to DB
-        println!("Found {:?}", &numbers);
+        // FIXME: ValuasClause
+        for &number in numbers.iter() {
+            let new_number = NewNumber {
+                number_drawn: number as i32,
+            };
+            let result = diesel::insert_into(numbers::table).values(new_number);
+            println!("Result: {:?}", result);
+        }
     } else {
         return format!("{} is an invalid number!", number);
     }
