@@ -119,12 +119,11 @@ pub fn root<'a>() -> ContRes<'a> {
 #[get("/draw")]
 pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
     let mut context = create_context("draw");
-    let mut numbers = [[0; 11]; 9];
+    let mut numbers = [[0; 10]; 9];
     let drawn = c![x.number_drawn as usize, for x in numbers_drawn(conn)];
-    // [1, 5, 57, 2, 9, 23, 10, 90, 87, 14, 20];
-    for y in 1..=10 {
+    for y in 0..=9 {
         for x in 0..=9 {
-            let num = (x * 10) + y;
+            let num = (x * 10) + y + 1;
             // println!("{}, {}", x , y);
             if drawn.contains(&num) {
                 numbers[x][y] = num;
@@ -151,8 +150,8 @@ fn add_number(number: i32, conn: DbConn) -> String {
     if number < 70 && number > 0 {
         let mut rng = rand::thread_rng();
         // FIXME: It's possible to draw the same number multiple times
-        // TODO: Add drawn numbers to DB
         let numbers: Vec<usize> = (0..number).map(|_| rng.gen_range(1, pool.len())).collect();
+        // TODO: Add drawn numbers to DB
         println!("Found {:?}", &numbers);
     } else {
         return format!("{} is an invalid number!", number);
