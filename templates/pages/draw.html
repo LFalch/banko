@@ -35,9 +35,13 @@ Forside
 <p>Tal i trækningsrækkefølge:</p>
 <table class="table table-striped">
   <tr>
-    {% for number in chrono_numbers %}
+    {% for index in range(end=chrono_numbers | length) %}
+    {% if index % 10 == 0 %}
+  </tr>
+  <tr>
+    {% endif %}
     <td>
-      {{ number }}
+      {{ chrono_numbers[index] }}
     </td>
     {% endfor %}
   </tr>
