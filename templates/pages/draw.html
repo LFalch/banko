@@ -32,6 +32,7 @@ Forside
     {% endfor %}
   </tbody>
 </table>
+{% if drawn_today | length > 0 %}
 <p>Trukket idag:</p>
 <table class="table table-striped">
   <tr>
@@ -46,6 +47,10 @@ Forside
     {% endfor %}
   </tr>
 </table>
+{% else %}
+<p>Der er ikke trukket nogen tal idag.</p>
+{% endif %}
+{% if chrono_numbers | length > 0 %}
 <p>Tal i trækningsrækkefølge:</p>
 <table class="table table-striped">
   <tr>
@@ -60,5 +65,5 @@ Forside
     {% endfor %}
   </tr>
 </table>
-</p>
+{% endif %}
 {% endblock content %}
