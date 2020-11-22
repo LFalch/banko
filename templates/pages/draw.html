@@ -32,6 +32,20 @@ Forside
     {% endfor %}
   </tbody>
 </table>
+<p>Trukket idag:</p>
+<table class="table table-striped">
+  <tr>
+    {% for index in range(end=drawn_today | length) %}
+    {% if index % 10 == 0 %}
+  </tr>
+  <tr>
+    {% endif %}
+    <td>
+      {{ drawn_today[index] }}
+    </td>
+    {% endfor %}
+  </tr>
+</table>
 <p>Tal i trækningsrækkefølge:</p>
 <table class="table table-striped">
   <tr>

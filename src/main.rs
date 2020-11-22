@@ -12,7 +12,7 @@ extern crate cute;
 
 use crate::schema::numbers;
 use diesel::prelude::*;
-use diesel::{Insertable, Queryable};
+use diesel::{Insertable, Queryable, QueryableByName};
 use lazy_static::*;
 use rand::seq::SliceRandom;
 use rocket::{
@@ -38,7 +38,8 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[database("sqlite")]
 pub struct DbConn(SqliteConnection);
 
-#[derive(Queryable, Serialize, Debug)]
+#[derive(Queryable, Serialize, QueryableByName, Debug)]
+#[table_name = "numbers"]
 struct Numbers {
     id: i32,
     number_drawn: i32,
@@ -111,6 +112,14 @@ fn numbers_drawn(conn: &DbConn) -> Vec<Numbers> {
         .unwrap()
 }
 
+fn numbers_drawn_today(conn: &DbConn) -> Vec<Numbers> {
+    diesel::sql_query(
+        "select * from numbers where substr(draw_date, 0,11) LIKE current_date order by id asc",
+    )
+    .load::<Numbers>(&**conn)
+    .unwrap()
+}
+
 pub fn add_number_to_db(number: i32, conn: &DbConn) -> QueryResult<usize> {
     let new_number = NewNumber {
         number_drawn: number as i32,
@@ -125,6 +134,7 @@ pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
     let mut context = create_context("draw");
     let mut numbers = [[0; 10]; 9];
     let drawn = c![x.number_drawn as usize, for x in numbers_drawn(&conn)];
+    let drawn_today = c![x.number_drawn as usize, for x in numbers_drawn_today(&conn)];
     for y in 0..=9 {
         for x in 0..=9 {
             let num = (x * 10) + y + 1;
@@ -135,6 +145,7 @@ pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
     }
     context.insert("numbers", &numbers);
     context.insert("chrono_numbers", &drawn);
+    context.insert("drawn_today", &drawn_today);
     respond_page("draw", context)
 }
 
