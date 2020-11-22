@@ -6,21 +6,22 @@ Forside
 {% endblock title %}
 {% block head %}
 <style>
+  table {
+    border: solid black 1px;
+  }
+
   td {
     height: 1.5rem;
     width: 1.5rem;
-    border-right: 2px solid #000000;
-    border-bottom: 2px solid #000000;
   }
 </style>
 {% endblock %}
 {% block header %}
-Forside
 {% endblock header %}
 
 {% block content %}
 <h3>Alle tal trukket:</h3>
-<table class="table table-striped">
+<table class="table">
   <tbody>
     {% for col in numbers %}
     <tr>
@@ -31,8 +32,8 @@ Forside
     {% endfor %}
   </tbody>
 </table>
-<p>Træningsrækkefølge:</p>
-<table>
+<p>Tal i trækningsrækkefølge:</p>
+<table class="table table-striped">
   <tr>
     {% for number in chrono_numbers %}
     <td>
