@@ -14,7 +14,7 @@ use crate::schema::numbers;
 use diesel::prelude::*;
 use diesel::{Insertable, Queryable};
 use lazy_static::*;
-use rand::Rng;
+use rand::{seq::SliceRandom, Rng};
 use rocket::{
     get,
     http::{ContentType, Status},
@@ -104,18 +104,27 @@ pub fn respond_page(page: &'static str, c: Context) -> ContRes<'static> {
     )
 }
 
-fn numbers_drawn(conn: DbConn) -> Vec<Numbers> {
+fn numbers_drawn(conn: &DbConn) -> Vec<Numbers> {
     numbers::table
-        .order(numbers::columns::id.desc())
-        .load::<Numbers>(&*conn)
+        .order(numbers::columns::id.asc())
+        .load::<Numbers>(&**conn)
         .unwrap()
+}
+
+pub fn add_number_to_db(number: i32, conn: &DbConn) -> QueryResult<usize> {
+    let new_number = NewNumber {
+        number_drawn: number as i32,
+    };
+    diesel::insert_into(numbers::table)
+        .values(new_number)
+        .execute(&**conn)
 }
 
 #[get("/")]
 pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
     let mut context = create_context("draw");
     let mut numbers = [[0; 10]; 9];
-    let drawn = c![x.number_drawn as usize, for x in numbers_drawn(conn)];
+    let drawn = c![x.number_drawn as usize, for x in numbers_drawn(&conn)];
     for y in 0..=9 {
         for x in 0..=9 {
             let num = (x * 10) + y + 1;
@@ -130,39 +139,29 @@ pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
 }
 
 #[get("/add/<number>")]
-fn add_number(number: i32, conn: DbConn) -> String {
-    let drawn = c![x.number_drawn as usize, for x in numbers_drawn(conn)];
-    let mut full_pool = Vec::new();
-    for i in 1..=90 {
-        full_pool.push(i)
-    }
-    let mut pool = Vec::<usize>::new();
-    for &x in full_pool.iter() {
+fn add_number(number: usize, conn: DbConn) -> String {
+    let drawn = c![x.number_drawn, for x in numbers_drawn(&conn)];
+    let mut pool = Vec::<i32>::new();
+    for x in 1..=90 {
         if !drawn.contains(&x) {
-            pool.push(x as usize);
+            pool.push(x);
         }
     }
-    if number < 70 && number > 0 {
+    if number <= pool.len() && number > 0 {
         let mut rng = rand::thread_rng();
-        // FIXME: It's possible to draw the same number multiple times
-        let numbers: Vec<usize> = (0..number).map(|_| rng.gen_range(1, pool.len())).collect();
-        // FIXME: ValuasClause
-        for &number in numbers.iter() {
-            let new_number = NewNumber {
-                number_drawn: number as i32,
-            };
-            let result = diesel::insert_into(numbers::table).values(new_number);
-            println!("Result: {:?}", result);
+
+        for &numb in pool.choose_multiple(&mut rng, number) {
+            add_number_to_db(numb, &conn).unwrap();
         }
+        format!("Added {} numbers to the list!", number)
     } else {
-        return format!("{} is an invalid number!", number);
+        format!("{} is an invalid number!", number)
     }
-    format!("Added {} numbers to the list!", number)
 }
 
 #[get("/list")]
 fn get_numbers(conn: DbConn) -> String {
-    format!("{:?}", numbers_drawn(conn))
+    format!("{:?}", numbers_drawn(&conn))
 }
 
 fn main() {
