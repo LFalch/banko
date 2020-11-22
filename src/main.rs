@@ -114,7 +114,7 @@ fn numbers_drawn(conn: &DbConn) -> Vec<Numbers> {
 
 fn numbers_drawn_today(conn: &DbConn) -> Vec<Numbers> {
     diesel::sql_query(
-        "select * from numbers where substr(draw_date, 0,11) LIKE current_date order by id asc",
+        "select * from numbers where substr(draw_date, 0,11) LIKE date('now', 'localtime') order by id asc",
     )
     .load::<Numbers>(&**conn)
     .unwrap()
