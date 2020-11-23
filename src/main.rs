@@ -19,10 +19,9 @@ use rocket::{
     get, post,
     request:: {Form, FromFormValue},
     http::{ContentType, Status, RawStr},
-    response::{Content, NamedFile, Response},
+    response::{Content, NamedFile, Response, Redirect},
 };
 use rocket_contrib::databases::{database, diesel::SqliteConnection};
-
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -38,6 +37,8 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[database("sqlite")]
 pub struct DbConn(SqliteConnection);
+
+type Session<'a> = rocket_session::Session<'a, Vec<String>>;
 
 struct IgnoreField;
 
@@ -153,8 +154,15 @@ pub fn add_number_to_db(number: i32, conn: &DbConn) -> QueryResult<usize> {
 }
 
 #[get("/")]
-pub fn draw<'a>(conn: DbConn) -> ContRes<'a> {
+pub fn draw<'a>(conn: DbConn, session: Session) -> ContRes<'a> {
     let mut context = create_context("draw");
+    let mut session_user = String::new();
+    session.tap(|sess| {
+    for user in sess.iter() {
+        session_user = user.to_owned();
+        }
+    });
+    context.insert("login", &session_user);
     let mut numbers = [[0; 10]; 9];
     let drawn = c![x.number_drawn as usize, for x in numbers_drawn(&conn)];
     let drawn_today = c![x.number_drawn as usize, for x in numbers_drawn_today(&conn)];
@@ -196,19 +204,26 @@ fn add_number(number: usize, conn: DbConn) -> String {
     }
 }
 
-// TODO: Make login actually do something
 #[post("/login", data = "<login_form>")]
-fn login(login_form: Form<UserLogin>) -> String {
-    println!("user: {}", login_form.username);
-    println!("pass: {}", login_form.password);
-    format!("Hello, {}!", login_form.username)
+fn login(login_form: Form<UserLogin>, session: Session) -> Redirect {
+    if login_form.username == "admin" && login_form.password == "admin" {
+        session.tap(move| sess|{
+            sess.push(login_form.username.to_string());
+        });
+        println!("Logged in!");
+    }
+
+    println!("{:?}", session);
+    Redirect::found("/")
 }
+
 
 
 fn main() {
     use crate::errors::*;
     rocket::ignite()
         .attach(DbConn::fairing())
+        .attach(Session::fairing())
         .mount(
             "/",
             routes![

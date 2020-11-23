@@ -38,10 +38,12 @@
 <body>
     <nav class="nav">
         <a class="nav-link active" href="/">Julebanko</a>
+        {% if login == 'admin' %}
         <a class="nav-link disabled" aria-disabled="true" href="#">Træk nye tal:</a>
         {% for x in range(end=6, start=1) %}
         <a class="nav-link" onClick="draw({{ x }});" href="#">{{ x }}</a>
         {% endfor %}
+        {% endif %}
         <a class="nav-link" href="#">Om julebanko</a>
     </nav>
     <div class="container">
