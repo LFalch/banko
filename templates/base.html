@@ -37,7 +37,7 @@
 
 <body>
     <nav class="nav">
-        <a class="nav-link active" href="#">Julebanko</a>
+        <a class="nav-link active" href="/">Julebanko</a>
         <a class="nav-link disabled" aria-disabled="true" href="#">Træk nye tal:</a>
         {% for x in range(end=6, start=1) %}
         <a class="nav-link" onClick="draw({{ x }});" href="#">{{ x }}</a>
@@ -52,6 +52,17 @@
     </div>
     <footer class="footer">
         <p>banko v{{version}} &copy; Orangenose 2020</p>
+        <form action="/login" method="POST" class="form-inline">
+            <div class="form-group mb-2">
+              <label for="username" class="sr-only">Email</label>
+              <input type="text" class="form-control" name="username" id="username" placeholder="Username">
+            </div>
+            <div class="form-group mx-sm-3 mb-2">
+              <label for="inputPassword" class="sr-only">Password</label>
+              <input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password">
+            </div>
+            <button type="submit" name="submit" class="btn btn-primary sb-2">Log ind</button>
+          </form>
     </footer>
 </body>
 

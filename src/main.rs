@@ -16,8 +16,9 @@ use diesel::{Insertable, Queryable, QueryableByName};
 use lazy_static::*;
 use rand::seq::SliceRandom;
 use rocket::{
-    get,
-    http::{ContentType, Status},
+    get, post,
+    request:: {Form, FromFormValue},
+    http::{ContentType, Status, RawStr},
     response::{Content, NamedFile, Response},
 };
 use rocket_contrib::databases::{database, diesel::SqliteConnection};
@@ -37,6 +38,28 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[database("sqlite")]
 pub struct DbConn(SqliteConnection);
+
+struct IgnoreField;
+
+impl<'a> FromFormValue<'a> for IgnoreField {
+    type Error = &'a str;
+
+    fn from_form_value(_: &'a RawStr) -> Result<Self, Self::Error> {
+        Ok(IgnoreField)
+    }
+
+    fn default() -> Option<Self> {
+        Some(IgnoreField)
+    }
+}
+
+#[derive(FromForm)]
+struct UserLogin {
+    username: String,
+    password: String,
+    #[allow(dead_code)]
+    submit: IgnoreField,
+}
 
 #[derive(Queryable, Serialize, QueryableByName, Debug)]
 #[table_name = "numbers"]
@@ -173,6 +196,14 @@ fn add_number(number: usize, conn: DbConn) -> String {
     }
 }
 
+// TODO: Make login actually do something
+#[post("/login", data = "<login_form>")]
+fn login(login_form: Form<UserLogin>) -> String {
+    println!("user: {}", login_form.username);
+    println!("pass: {}", login_form.password);
+    format!("Hello, {}!", login_form.username)
+}
+
 
 fn main() {
     use crate::errors::*;
@@ -183,6 +214,7 @@ fn main() {
             routes![
                 draw,
                 add_number,
+                login,
                 crate::statics::robots_handler,
                 crate::statics::favicon_handler,
                 crate::statics::static_handler
