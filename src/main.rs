@@ -16,10 +16,11 @@ use diesel::{Insertable, Queryable, QueryableByName};
 use lazy_static::*;
 use rand::seq::SliceRandom;
 use rocket::{
-    get, post,
-    request:: {Form, FromFormValue},
-    http::{ContentType, Status, RawStr},
-    response::{Content, NamedFile, Response, Redirect},
+    get,
+    http::{ContentType, RawStr, Status},
+    post,
+    request::{Form, FromFormValue},
+    response::{Content, NamedFile, Redirect, Response},
 };
 use rocket_contrib::databases::{database, diesel::SqliteConnection};
 use serde::{Deserialize, Serialize};
@@ -158,8 +159,8 @@ pub fn draw<'a>(conn: DbConn, session: Session) -> ContRes<'a> {
     let mut context = create_context("draw");
     let mut session_user = String::new();
     session.tap(|sess| {
-    for user in sess.iter() {
-        session_user = user.to_owned();
+        for user in sess.iter().take(1) {
+            session_user = user.to_owned();
         }
     });
     context.insert("login", &session_user);
@@ -181,43 +182,48 @@ pub fn draw<'a>(conn: DbConn, session: Session) -> ContRes<'a> {
 }
 
 #[get("/add/<number>")]
-fn add_number(number: usize, conn: DbConn) -> String {
-    let drawn = c![x.number_drawn, for x in numbers_drawn(&conn)];
-    let mut pool = Vec::<i32>::new();
-    let mut full_pool = Vec::new();
-    for x in 1..=90 {
-        full_pool.push(x)
-    }
-    for &x in full_pool.iter() {
-        if !drawn.contains(&x) {
-            pool.push(x);
+fn add_number(number: usize, conn: DbConn, session: Session) -> String {
+    let mut session_user = String::new();
+    session.tap(|sess| {
+        for user in sess.iter().take(1) {
+            session_user = user.to_owned();
         }
-    }
-    if number <= pool.len() && number > 0 {
-        let mut rng = rand::thread_rng();
-        for &numb in pool.choose_multiple(&mut rng, number) {
-            add_number_to_db(numb as i32, &conn).unwrap();
+    });
+    if session_user == "admin" {
+        let drawn = c![x.number_drawn, for x in numbers_drawn(&conn)];
+        let mut pool = Vec::<i32>::new();
+        let mut full_pool = Vec::new();
+        for x in 1..=90 {
+            full_pool.push(x)
         }
-        format!("Added {} numbers to the list!", number)
+        for &x in full_pool.iter() {
+            if !drawn.contains(&x) {
+                pool.push(x);
+            }
+        }
+        if number <= pool.len() && number > 0 {
+            let mut rng = rand::thread_rng();
+            for &numb in pool.choose_multiple(&mut rng, number) {
+                add_number_to_db(numb as i32, &conn).unwrap();
+            }
+            format!("Added {} numbers to the list!", number)
+        } else {
+            format!("Cannot {} numbers!", number)
+        }
     } else {
-        format!("{} is an invalid number!", number)
+        "Must be logged in!".to_string()
     }
 }
 
 #[post("/login", data = "<login_form>")]
 fn login(login_form: Form<UserLogin>, session: Session) -> Redirect {
     if login_form.username == "admin" && login_form.password == "admin" {
-        session.tap(move| sess|{
+        session.tap(move |sess| {
             sess.push(login_form.username.to_string());
         });
-        println!("Logged in!");
     }
-
-    println!("{:?}", session);
     Redirect::found("/")
 }
-
-
 
 fn main() {
     use crate::errors::*;

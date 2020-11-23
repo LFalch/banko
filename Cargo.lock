@@ -118,14 +118,12 @@ dependencies = [
  "cute",
  "diesel",
  "dotenv",
- "json_dotpath",
  "lazy_static",
  "rand",
  "rocket",
  "rocket_contrib",
  "rocket_session",
  "serde",
- "serde_json",
  "tera",
 ]
 
@@ -584,18 +582,6 @@ name = "itoa"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc6f3ad7b9d11a0c00842ff8de1b60ee58661048eb8049ed33c73594f359d7e6"
-
-[[package]]
-name = "json_dotpath"
-version = "1.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e907e6c22a540a809d003178eae3172a6c54b94338058b9d72d051e53187be7"
-dependencies = [
- "serde",
- "serde_derive",
- "serde_json",
- "thiserror",
-]
 
 [[package]]
 name = "kernel32-sys"
@@ -1355,26 +1341,6 @@ dependencies = [
  "slug",
  "unic-segment",
  "url",
-]
-
-[[package]]
-name = "thiserror"
-version = "1.0.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e9ae34b84616eedaaf1e9dd6026dbe00dcafa92aa0c8077cb69df1fcfe5e53e"
-dependencies = [
- "thiserror-impl",
-]
-
-[[package]]
-name = "thiserror-impl"
-version = "1.0.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ba20f23e85b10754cd195504aebf6a27e2e6cbe28c17778a0c930724628dd56"
-dependencies = [
- "proc-macro2 1.0.24",
- "quote 1.0.7",
- "syn 1.0.48",
 ]
 
 [[package]]
