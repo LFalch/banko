@@ -173,10 +173,6 @@ fn add_number(number: usize, conn: DbConn) -> String {
     }
 }
 
-#[get("/list")]
-fn get_numbers(conn: DbConn) -> String {
-    format!("{:?}", numbers_drawn(&conn))
-}
 
 fn main() {
     use crate::errors::*;
@@ -187,7 +183,6 @@ fn main() {
             routes![
                 draw,
                 add_number,
-                get_numbers,
                 crate::statics::robots_handler,
                 crate::statics::favicon_handler,
                 crate::statics::static_handler
