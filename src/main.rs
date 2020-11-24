@@ -225,6 +225,14 @@ fn login(login_form: Form<UserLogin>, session: Session) -> Redirect {
     Redirect::found("/")
 }
 
+#[get("/winner")]
+pub fn winner<'b>(_conn: DbConn, _session: Session) -> ContRes<'b> {
+    let mut context = create_context("winner");
+    let foo = "".to_string();
+    context.insert("claims", &foo);
+    respond_page("winner", context)
+}
+
 fn main() {
     use crate::errors::*;
     rocket::ignite()
@@ -233,12 +241,13 @@ fn main() {
         .mount(
             "/",
             routes![
-                draw,
                 add_number,
+                draw,
                 login,
+                winner,
                 crate::statics::robots_handler,
                 crate::statics::favicon_handler,
-                crate::statics::static_handler
+                crate::statics::static_handler,
             ],
         )
         .register(catchers![page_not_found, bad_request, server_error])
