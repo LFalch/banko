@@ -77,6 +77,22 @@ struct NewNumber {
     number_drawn: i32,
 }
 
+#[derive(Hash, Eq, PartialEq, Debug, Deserialize, Serialize)] 
+// , Insertable)]
+// #[table_name = "winner"]
+struct Winner {
+    name: String,
+    how: String,
+    when: i32,
+}
+
+impl Winner {
+    fn new(name: &str, how: &str, when: i32) -> Winner {
+        Winner { name: name.to_string(), how: how.to_string(), when: when}
+    }
+}
+
+
 pub type Res<'a> = Result<Response<'a>, Status>;
 pub type ContRes<'a> = Content<Res<'a>>;
 
@@ -235,9 +251,12 @@ pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
         }
     });
     context.insert("login", &session_user);
+    
+    let claims = [["Einar", "Én række", "2020-11-24 12:01"],
+    ["Olaf", "To rækker", "2020-11-24-14:01"],
+    ["Harald", "Hel plade", "2020-11-23 12:12"]];
 
-    let foo = [2,3,6,7,2];
-    // context.insert("claims", &foo);
+    context.insert("claims", &claims);
     respond_page("winner", context)
 }
 
