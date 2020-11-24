@@ -1,6 +1,6 @@
 [development]
 port = 8000
-log = "normal"
+log = "debug"
 
 [development.databases]
 sqlite = { url = "db/banko.sqlite3" }
