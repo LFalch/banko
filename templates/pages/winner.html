@@ -11,7 +11,7 @@ Vindere
 <form>
     <button>Jeg har vundet!</button>
 </form>
-{% if claims | length > 0 %}
+{% if claims %}
 <h3>Dem der mener de har vundet:</h3>
 <table class="table">
     <thead>
@@ -24,14 +24,14 @@ Vindere
     <tbody>
         {% for winner in claims %}
         <tr>
-            <td>{{ winner.name }}</td>
-            <td>{{ winner.how }}</td>
-            <td>{{ winner.when }}</td>
+            <td>{{ winner }}</td>
+            <td>{{ winner }}</td>
+            <td>{{ winner }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 {% else %}
-<p>Ingen har meldt om at de har vundet, endnu.</p>
+<p>Ingen har meldt at de har vundet, endnu.</p>
 {% endif %}
 {% endblock content %}

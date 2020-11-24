@@ -226,10 +226,18 @@ fn login(login_form: Form<UserLogin>, session: Session) -> Redirect {
 }
 
 #[get("/winner")]
-pub fn winner<'b>(_conn: DbConn, _session: Session) -> ContRes<'b> {
-    let mut context = create_context("winner");
-    let foo = "".to_string();
-    context.insert("claims", &foo);
+pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
+    let mut context = create_context("win");
+    let mut session_user = String::new();
+    session.tap(|sess| {
+        for user in sess.iter().take(1) {
+            session_user = user.to_owned();
+        }
+    });
+    context.insert("login", &session_user);
+
+    let foo = [2,3,6,7,2];
+    // context.insert("claims", &foo);
     respond_page("winner", context)
 }
 
