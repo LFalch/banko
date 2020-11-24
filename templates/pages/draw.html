@@ -67,3 +67,19 @@ Forside
 </table>
 {% endif %}
 {% endblock content %}
+{% block footer %}
+{% if login == 'admin' %}
+{% else %}
+<form action="/login" method="POST" class="form-inline">
+    <div class="form-group mb-2">
+      <label for="username" class="sr-only">Email</label>
+      <input type="text" class="form-control" name="username" id="username" placeholder="Username">
+    </div>
+    <div class="form-group mx-sm-3 mb-2">
+      <label for="inputPassword" class="sr-only">Password</label>
+      <input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password">
+    </div>
+    <button type="submit" name="submit" class="btn btn-primary sb-2">Log ind</button>
+  </form>
+  {% endif %}
+  {% endblock footer %}
