@@ -8,9 +8,56 @@ Vindere
 {% endblock header %}
 
 {% block content %}
-<form>
-    <button>Jeg har vundet!</button>
+<p>
+
+<form action="/banko" method="POST">
+    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#winnerModal">Jeg har
+        vundet!</button>
+
+    <div class="modal fade" id="winnerModal" tabindex="-1" aria-labelledby="winnerModal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="winnerModal">Vinderregistrering</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">Navn:</label>
+                            <input type="text" class="form-control" name="name" id="name">
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="howRadios" id="howRadios1" value="1"
+                                checked>
+                            <label class="form-check-label" for="howRadios1">
+                                1 række
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="howRadios" id="howRadios2" value="3">
+                            <label class="form-check-label" for="howRadios2">
+                                2 rækker
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="howRadios" id="howRadios3" value="3">
+                            <label class="form-check-label" for="howRadios3">
+                                Hele pladen!
+                            </label>
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Luk</button>
+                    <button type="submit" name="submit" class="btn btn-primary">Banko!</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </form>
+</p>
 {% if claims %}
 <h3>Dem der mener de har vundet:</h3>
 <table class="table">
