@@ -63,6 +63,14 @@ struct UserLogin {
     submit: IgnoreField,
 }
 
+#[derive(FromForm)]
+struct Banko {
+    name: String,
+    how: String,
+    #[allow(dead_code)]
+    submit: IgnoreField,
+}
+
 #[derive(Queryable, Serialize, QueryableByName, Debug)]
 #[table_name = "numbers"]
 struct Numbers {
@@ -265,6 +273,14 @@ pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
     respond_page("winner", context)
 }
 
+#[post("/banko", data = "<login_form>")]
+fn banko(login_form: Form<Banko>, session: Session) -> Redirect {
+    // TODO: 1) Send mail to admin
+    // TODO: 2) Register the winner in the database
+    println!("{} har vundet på {}", login_form.name, login_form.how);
+    Redirect::found("/winner")
+}
+
 #[get("/about")]
 pub fn about<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
     let mut context = create_context("about");
@@ -288,6 +304,7 @@ fn main() {
             routes![
                 about,
                 add_number,
+                banko,
                 draw,
                 login,
                 winner,
