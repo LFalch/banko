@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+{% block title %}
+Vindere
+{% endblock title %}
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+<p>
+    Banko er et spil. Vi er stadig ved at bygge web-versionen.
+</p>
+<p>
+    Når de fysiske banko-plader er delt ud, kan admin for siden trække tal ud.
+    Hvis man har vundet registrerer man det straks her på siden. Der sendes en
+    mail til admin, så de ved hvem der meldt hvad ind.
+</p>
+<p>
+    Hvor mange der trækkes, og hvor tit, må I aftale selv.
+</p>
+<p>
+    Banko-plade til udskrivning kan evt. hentes på
+    <a href="https://bankopladerne.dk/">Bankopladerne.dk</a>, der er ca.
+    300.000 at vælge mellem.
+</p>
+<div class="progress">
+    <div class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 50%" aria-valuenow="50"
+        aria-valuemin="0" aria-valuemax="100"></div>
+</div>
+<p>
+    Grafikken er produceret af <a href="https://kenney.nl/">Kenney</a>. Koden er af Orangenose.
+</p>
+<p>
+    <img class="mr-3" src="https://www.orangenose.com/albert190.gif" alt="Albert" />
+</p>
+{% endblock content %}

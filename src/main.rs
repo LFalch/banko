@@ -265,6 +265,19 @@ pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
     respond_page("winner", context)
 }
 
+#[get("/about")]
+pub fn about<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
+    let mut context = create_context("about");
+    let mut session_user = String::new();
+    session.tap(|sess| {
+        for user in sess.iter().take(1) {
+            session_user = user.to_owned();
+        }
+    });
+    context.insert("login", &session_user);
+    respond_page("about", context)
+}
+
 fn main() {
     use crate::errors::*;
     rocket::ignite()
@@ -273,6 +286,7 @@ fn main() {
         .mount(
             "/",
             routes![
+                about,
                 add_number,
                 draw,
                 login,
