@@ -36,27 +36,65 @@
 </head>
 
 <body>
-    <nav class="nav">
-        <a class="nav-link active" href="/">Julebanko</a>
-        <a class="nav-link" href="#">Om julebanko</a>
-        {% if login %}
-        {% if login == 'admin' %}
-        <a class="nav-link disabled" aria-disabled="true" href="#">Træk nye tal:</a>
-        {% for x in range(end=6, start=1) %}
-        <a class="nav-link" onClick="draw({{ x }});" href="#">{{ x }}</a>
-        {% endfor %}
-        {% endif %}
-        {% endif %}
-    </nav>
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <img class="mr-3" src="/static/tree/wreath.png" alt="Wreath" />
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if cur == "draw" %}active{% endif %}" href="/">Julebanko</a>
+        </li>
+        <li class="nav-item">
+            <img class="mr-3" src="/static/tree/presentGreenRound.png" alt="Wreath" />
+        </li>
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="/" role="button" aria-haspopup="true"
+                aria-expanded="false">Træk nye tal</a>
+            <div class="dropdown-menu">
+                {% if login %}
+                {% if login == 'admin' %}
+                {% for x in range(end=6, start=1) %}
+                <a class="dropdown-item" onClick="draw({{ x }});" href="#">{{ x }} tal</a>
+                {% endfor %}
+                {% endif %}
+                {% else %}
+                <a class="dropdown-item" href="#login">Log ind først..</a>
+                {% endif %}
+            </div>
+        </li>
+        <li class="nav-item">
+            <img class="mr-3" src="/static/tree/present.png" alt="Wreath" />
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if cur == "win" %}active{% endif %}" href="/winner">Vindere</a>
+        </li>
+        <li class="nav-item">
+            <img class="mr-3" src="/static/tree/presentGreenLow.png" alt="Wreath" />
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if cur == "about" %}active{% endif %}" href="/about" tabindex="-1"
+                aria-disabled="true">Om..</a>
+        </li>
+    </ul>
+
     <div class="container">
-        <h2>{% block header %}{% endblock header %}</h2>
-        <p>
-            {% block content %}{% endblock content %}
-        </p>
+        <div class="media">
+            <img class="mr-3 align-self-top" src="/static/tree/treePineSnow.png" alt="fir tree" />
+            <div class="media-body">
+                <h5 class="mt-0">{% block header %}{% endblock header %}</h5>
+                {% block content %}{% endblock content %}
+            </div>
+        </div>
     </div>
     <footer class="footer">
-        <p>banko v{{version}} &copy; Orangenose 2020</p>
-       {% block footer %}{% endblock footer %}
+        <div class="media">
+            <img class="mr-3 align-self-top" src="/static/tree/snowmanFancy.png" alt="fancy snowman" />
+            <div class="media-body">
+                <h5 class="mt-0">Julebanko</h5>
+                <p>banko v{{version}} &copy; Orangenose 2020</p>
+            </div>
+        </div>
+        <a name="login"></a>
+        {% block footer %}{% endblock footer %}
     </footer>
 </body>
 
