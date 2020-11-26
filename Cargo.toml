@@ -9,12 +9,15 @@ rocket = "0.4"
 rocket_session = "0.2.1"
 tera = "0.11"
 lazy_static = "1"
+lettre = { git = "https://github.com/lettre/lettre.git" }
+# lettre = "0.9.5"
 serde = { version = "1.0", features = ["derive"]}
 diesel = { version = "1.4", features = ["sqlite"] }
 dotenv = "0.15.0"
 rand = "0.7.3"
 cute = "0.3.0"
 chrono = "0.4.19"
+dotenv_codegen = "0.15.0"
 
 [dependencies.rocket_contrib]
 version = "0.4"

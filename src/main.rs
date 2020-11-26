@@ -9,11 +9,15 @@ extern crate diesel;
 extern crate dotenv;
 #[macro_use(c)]
 extern crate cute;
+#[macro_use]
+extern crate dotenv_codegen;
 
 use crate::schema::numbers;
 use diesel::prelude::*;
 use diesel::{Insertable, Queryable, QueryableByName};
+use dotenv::dotenv;
 use lazy_static::*;
+use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
 use rand::seq::SliceRandom;
 use rocket::{
     get,
@@ -26,6 +30,7 @@ use rocket_contrib::databases::{database, diesel::SqliteConnection};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
+    env,
     path::{Path, PathBuf},
 };
 use tera::{Context, Tera, Value};
@@ -95,7 +100,7 @@ struct Winner {
 }
 
 impl Winner {
-    fn new(name: &str, how: &str, when: i32) -> Winner {
+    fn _new(name: &str, how: &str, when: i32) -> Winner {
         Winner {
             name: name.to_string(),
             how: how.to_string(),
@@ -170,6 +175,37 @@ fn numbers_drawn_today(conn: &DbConn) -> Vec<Numbers> {
     )
     .load::<Numbers>(&**conn)
     .unwrap()
+}
+
+fn banko_notify(conn: &DbConn, name: String, how: String) -> String {
+    dotenv().ok();
+    println!("Skal til at bygge en mail..");
+    let email = Message::builder()
+        .from("Julebanko <julebanko@fair-it.dk>".parse().unwrap())
+        .to(
+            format!("{} <{}>", dotenv!("ADMIN_NAME"), dotenv!("ADMIN_MAIL"))
+                .parse()
+                .unwrap(),
+        )
+        .subject(format!("{} har vundet", name))
+        .body(format!(
+            "Hej!\n\n{} ans&oslash;ger om gevinst for {}",
+            name, how
+        ))
+        .unwrap();
+    let creds = Credentials::new(
+        dotenv!("MAIL_USER").to_string(),
+        dotenv!("MAIL_PASSWORD").to_string(),
+    );
+    let mailer = SmtpTransport::relay(dotenv!("MAIL_SERVER"))
+        .unwrap()
+        .credentials(creds)
+        .build();
+    println!("Skal til at sende en mail..");
+    match mailer.send(&email) {
+        Ok(_) => "ok".to_string(),
+        Err(e) => format!("Could not send email: {:?}", e),
+    }
 }
 
 pub fn add_number_to_db(number: i32, conn: &DbConn) -> QueryResult<usize> {
@@ -274,10 +310,13 @@ pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
 }
 
 #[post("/banko", data = "<login_form>")]
-fn banko(login_form: Form<Banko>, session: Session) -> Redirect {
+fn banko(login_form: Form<Banko>, session: Session, conn: DbConn) -> Redirect {
     // TODO: 1) Send mail to admin
     // TODO: 2) Register the winner in the database
-    println!("{} har vundet på {}", login_form.name, login_form.how);
+    // println!("{} har vundet på {}", login_form.name, login_form.how);
+    let name: String = login_form.name.to_string();
+    let how: String = login_form.how.to_string();
+    let _res = banko_notify(&conn, name, how);
     Redirect::found("/winner")
 }
 
