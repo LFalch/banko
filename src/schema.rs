@@ -5,3 +5,17 @@ table! {
         draw_date -> Integer,
     }
 }
+
+table! {
+    winner (id) {
+        id -> Integer,
+        name -> Text,
+        how -> Integer,
+        when -> Integer,
+    }
+}
+
+allow_tables_to_appear_in_same_query!(
+    numbers,
+    winner,
+);

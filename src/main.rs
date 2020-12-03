@@ -12,7 +12,7 @@ extern crate cute;
 #[macro_use]
 extern crate dotenv_codegen;
 
-use crate::schema::numbers;
+use crate::schema::{numbers, winner};
 use diesel::prelude::*;
 use diesel::{Insertable, Queryable, QueryableByName};
 use dotenv::dotenv;
@@ -71,7 +71,7 @@ struct UserLogin {
 #[derive(FromForm)]
 struct Banko {
     name: String,
-    how: String,
+    how: i32,
     #[allow(dead_code)]
     submit: IgnoreField,
 }
@@ -90,23 +90,20 @@ struct NewNumber {
     number_drawn: i32,
 }
 
-#[derive(Hash, Eq, PartialEq, Debug, Deserialize, Serialize)]
-// , Insertable)]
-// #[table_name = "winner"]
+#[derive(Queryable, QueryableByName, Debug, Serialize)]
+#[table_name = "winner"]
 struct Winner {
+    id: i32,
     name: String,
-    how: String,
+    how: i32,
     when: i32,
 }
 
-impl Winner {
-    fn _new(name: &str, how: &str, when: i32) -> Winner {
-        Winner {
-            name: name.to_string(),
-            how: how.to_string(),
-            when,
-        }
-    }
+#[derive(Deserialize, Insertable)]
+#[table_name = "winner"]
+struct NewWinner {
+    name: String,
+    how: i32,
 }
 
 pub type Res<'a> = Result<Response<'a>, Status>;
@@ -171,15 +168,35 @@ fn numbers_drawn(conn: &DbConn) -> Vec<Numbers> {
 
 fn numbers_drawn_today(conn: &DbConn) -> Vec<Numbers> {
     diesel::sql_query(
-        "select * from numbers where substr(draw_date, 0,11) LIKE date('now', 'localtime') order by id asc",
+        "select * from numbers where substr(draw_date, 0,11)
+        LIKE date('now', 'localtime') order by id asc",
     )
-    .load::<Numbers>(&**conn)
+    .load::<Numbers>(&**conn) .unwrap()
+}
+
+fn winner_claim_add(conn: &DbConn, name: String, how: i32) -> QueryResult<usize> {
+    let new_winner = NewWinner{
+        name,
+        how,
+    };
+    diesel::insert_into(winner::table)
+        .values(new_winner)
+        .execute(&**conn)
+    }
+
+fn winner_claims(conn: &DbConn) -> Vec<Winner> {
+    diesel::sql_query(
+        "select * from winner order by 'when' ASC",
+    )
+    .load::<Winner>(&**conn)
     .unwrap()
 }
 
-fn banko_notify(conn: &DbConn, name: String, how: String) -> String {
+fn banko_notify(conn: &DbConn, name: String, how: i32) -> String {
     dotenv().ok();
     println!("Skal til at bygge en mail..");
+    let subject = format!("{} har vundet", name);
+    let body = format!("Hej!\n\n{} ans&oslash;ger om gevinst for {}", name, how);
     let email = Message::builder()
         .from("Julebanko <julebanko@fair-it.dk>".parse().unwrap())
         .to(
@@ -187,11 +204,8 @@ fn banko_notify(conn: &DbConn, name: String, how: String) -> String {
                 .parse()
                 .unwrap(),
         )
-        .subject(format!("{} har vundet", name))
-        .body(format!(
-            "Hej!\n\n{} ans&oslash;ger om gevinst for {}",
-            name, how
-        ))
+        .subject(subject)
+        .body(body)
         .unwrap();
     let creds = Credentials::new(
         dotenv!("MAIL_USER").to_string(),
@@ -203,7 +217,10 @@ fn banko_notify(conn: &DbConn, name: String, how: String) -> String {
         .build();
     println!("Skal til at sende en mail..");
     match mailer.send(&email) {
-        Ok(_) => "ok".to_string(),
+        Ok(_) => {
+            let _ = winner_claim_add(&conn, name, how);
+            "ok".to_string()
+            },
         Err(e) => format!("Could not send email: {:?}", e),
     }
 }
@@ -299,6 +316,8 @@ pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
     });
     context.insert("login", &session_user);
 
+    let foo = winner_claims(&conn);
+    dbg!(foo);
     let claims = [
         ["Einar", "Én række", "2020-11-24 12:01"],
         ["Olaf", "To rækker", "2020-11-24-14:01"],
@@ -310,18 +329,18 @@ pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
 }
 
 #[post("/banko", data = "<login_form>")]
-fn banko(login_form: Form<Banko>, session: Session, conn: DbConn) -> Redirect {
+fn banko(login_form: Form<Banko>, _session: Session, conn: DbConn) -> Redirect {
     // TODO: 1) Send mail to admin
     // TODO: 2) Register the winner in the database
     // println!("{} har vundet på {}", login_form.name, login_form.how);
     let name: String = login_form.name.to_string();
-    let how: String = login_form.how.to_string();
+    let how: i32 = login_form.how;
     let _res = banko_notify(&conn, name, how);
     Redirect::found("/winner")
 }
 
 #[get("/about")]
-pub fn about<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
+pub fn about<'b>(_conn: DbConn, session: Session) -> ContRes<'b> {
     let mut context = create_context("about");
     let mut session_user = String::new();
     session.tap(|sess| {
