@@ -96,7 +96,7 @@ struct Winner {
     id: i32,
     name: String,
     how: i32,
-    when: i32,
+    when: String,
 }
 
 #[derive(Deserialize, Insertable)]
@@ -186,7 +186,7 @@ fn winner_claim_add(conn: &DbConn, name: String, how: i32) -> QueryResult<usize>
 
 fn winner_claims(conn: &DbConn) -> Vec<Winner> {
     diesel::sql_query(
-        "select * from winner order by 'when' ASC",
+        "select * from winner order by rowid DESC",
     )
     .load::<Winner>(&**conn)
     .unwrap()
@@ -288,7 +288,7 @@ fn add_number(number: usize, conn: DbConn, session: Session) -> String {
             }
             format!("Added {} numbers to the list!", number)
         } else {
-            format!("Cannot {} numbers!", number)
+            format!("Cannot add {} numbers!", number)
         }
     } else {
         "Must be logged in!".to_string()
@@ -316,13 +316,7 @@ pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
     });
     context.insert("login", &session_user);
 
-    let foo = winner_claims(&conn);
-    dbg!(foo);
-    let claims = [
-        ["Einar", "Én række", "2020-11-24 12:01"],
-        ["Olaf", "To rækker", "2020-11-24-14:01"],
-        ["Harald", "Hel plade", "2020-11-23 12:12"],
-    ];
+    let claims = winner_claims(&conn);
 
     context.insert("claims", &claims);
     respond_page("winner", context)
@@ -330,9 +324,6 @@ pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
 
 #[post("/banko", data = "<login_form>")]
 fn banko(login_form: Form<Banko>, _session: Session, conn: DbConn) -> Redirect {
-    // TODO: 1) Send mail to admin
-    // TODO: 2) Register the winner in the database
-    // println!("{} har vundet på {}", login_form.name, login_form.how);
     let name: String = login_form.name.to_string();
     let how: i32 = login_form.how;
     let _res = banko_notify(&conn, name, how);

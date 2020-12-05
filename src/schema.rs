@@ -11,7 +11,7 @@ table! {
         id -> Integer,
         name -> Text,
         how -> Integer,
-        when -> Integer,
+        when -> Text,
     }
 }
 

@@ -4,3 +4,16 @@
     {{error}}
 </p>
 {% endmacro errorpage %}
+
+{% macro how(rows) %}
+{% if rows == 1 %}
+1 række.
+{% elif rows == 2 %}
+2 rækker.
+{% elif rows == 3 %}
+Hele pladen!
+{% else %}
+Magi!!!
+{% endif %}
+{% endmacro how %}
+
