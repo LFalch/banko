@@ -1,6 +1,6 @@
 [package]
 name = "banko"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["LFalch <lucas@wasd.dk>", "Bjarke Sørensen <bs@wasd.dk>"]
 edition = "2018"
 
