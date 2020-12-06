@@ -1,12 +1,10 @@
 #![feature(decl_macro, proc_macro_hygiene)]
-#[allow(unused_imports)]
 #[macro_use]
 extern crate tera;
 #[macro_use]
 extern crate rocket;
 #[macro_use]
 extern crate diesel;
-extern crate dotenv;
 #[macro_use(c)]
 extern crate cute;
 #[macro_use]
