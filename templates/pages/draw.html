@@ -80,7 +80,8 @@ Forside
     <label for="inputPassword" class="sr-only">Password</label>
     <input type="password" name="password" class="form-control" id="inputPassword" placeholder="Password">
   </div>
-  <button type="submit" name="submit" class="btn btn-primary sb-2">Log ind</button>
+  <button type="submit" id="submit" name="submit" class="btn btn-primary sb-2">Log ind</button>
 </form>
+<div><p>{{ remote_ip }}</p></div>
 {% endif %}
 {% endblock footer %}

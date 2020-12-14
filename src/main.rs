@@ -16,13 +16,16 @@ use diesel::{Insertable, Queryable, QueryableByName};
 use dotenv::dotenv;
 use lazy_static::*;
 use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
+use lettre::message::{SinglePart, header};
 use rand::seq::SliceRandom;
 use rocket::{
     get,
     http::{ContentType, RawStr, Status},
+    Outcome,
     post,
-    request::{Form, FromFormValue},
+    request::{self, Form, FromRequest, FromFormValue},
     response::{Content, NamedFile, Redirect, Response},
+    Request,
 };
 use rocket_contrib::databases::{database, diesel::SqliteConnection};
 use serde::{Deserialize, Serialize};
@@ -180,7 +183,7 @@ fn winner_claim_add(conn: &DbConn, name: String, how: i32) -> QueryResult<usize>
     diesel::insert_into(winner::table)
         .values(new_winner)
         .execute(&**conn)
-    }
+}
 
 fn winner_claims(conn: &DbConn) -> Vec<Winner> {
     diesel::sql_query(
@@ -193,17 +196,27 @@ fn winner_claims(conn: &DbConn) -> Vec<Winner> {
 fn banko_notify(conn: &DbConn, name: String, how: i32) -> String {
     dotenv().ok();
     println!("Skal til at bygge en mail..");
+    let how_string = match how {
+        1 => "1 række.",
+        2 => "2 rækker.",
+        3 => "hele pladen!",
+        _ => "snyderi!!!",
+    };
+    let body = format!("Hej!\n\n{} ansøger om gevinst for {}", name, how_string);
+    let part = SinglePart::builder()
+         .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
+         .header(header::ContentTransferEncoding::Binary)
+         .body(body);
     let subject = format!("{} har vundet", name);
-    let body = format!("Hej!\n\n{} ans&oslash;ger om gevinst for {}", name, how);
     let email = Message::builder()
         .from("Julebanko <julebanko@fair-it.dk>".parse().unwrap())
         .to(
             format!("{} <{}>", dotenv!("ADMIN_NAME"), dotenv!("ADMIN_MAIL"))
                 .parse()
-                .unwrap(),
+                .unwrap()
         )
         .subject(subject)
-        .body(body)
+        .singlepart(part)
         .unwrap();
     let creds = Credentials::new(
         dotenv!("MAIL_USER").to_string(),
@@ -232,9 +245,40 @@ pub fn add_number_to_db(number: i32, conn: &DbConn) -> QueryResult<usize> {
         .execute(&**conn)
 }
 
+pub struct RemoteAddr {
+    addr: String,
+}
+
+impl RemoteAddr {
+    fn addr(self) -> String {
+        self.addr
+    }
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for RemoteAddr {
+    type Error = ();
+
+    fn from_request(req: &'a Request<'r>) -> request::Outcome<Self, ()> {
+        if req.headers().contains("X-Forwarded-For") {
+            let header = req.headers().get_one("X-Forwarded-For").unwrap();
+            let addr = header.split(',').next().unwrap();
+
+            return Outcome::Success(RemoteAddr {
+                addr: addr.to_string(),
+            });
+        }
+
+        Outcome::Success(RemoteAddr {
+            addr: req.remote().unwrap().ip().to_string(),
+        })
+    }
+}
+
 #[get("/")]
-pub fn draw<'a>(conn: DbConn, session: Session) -> ContRes<'a> {
+pub fn draw<'a>(conn: DbConn, session: Session, req: RemoteAddr) -> ContRes<'a> {
     let mut context = create_context("draw");
+    let remote_ip = req.addr();
+    context.insert("remote_ip", &remote_ip);
     let mut session_user = String::new();
     session.tap(|sess| {
         for user in sess.iter().take(1) {
@@ -295,13 +339,14 @@ fn add_number(number: usize, conn: DbConn, session: Session) -> String {
 
 #[post("/login", data = "<login_form>")]
 fn login(login_form: Form<UserLogin>, session: Session) -> Redirect {
-    if login_form.username == "admin" && login_form.password == "admin" {
-        session.tap(move |sess| {
+            if login_form.username == "admin" && login_form.password == "admin" {
+            session.tap(move |sess| {
             sess.push(login_form.username.to_string());
-        });
-    }
-    Redirect::found("/")
+            });
+        }
+        Redirect::found("/")
 }
+
 
 #[get("/winner")]
 pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
