@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+{% block title %}
+Fejl!
+{% endblock title %}
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+<p>
+Fejl!
+</p>
+<p>
+    Det du har prøvet at gøre må man ikke fra din IP-adresse ({{ remote_ip }}).
+</p>
+<p>
+	Hvis du har vundet, men ikke kan komme på må du give administratoren besked,
+	så de kan registrere dig.
+</p>
+{% endblock content %}

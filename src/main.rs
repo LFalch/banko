@@ -15,17 +15,16 @@ use diesel::prelude::*;
 use diesel::{Insertable, Queryable, QueryableByName};
 use dotenv::dotenv;
 use lazy_static::*;
+use lettre::message::{header, SinglePart};
 use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
-use lettre::message::{SinglePart, header};
 use rand::seq::SliceRandom;
 use rocket::{
     get,
     http::{ContentType, RawStr, Status},
-    Outcome,
     post,
-    request::{self, Form, FromRequest, FromFormValue},
+    request::{self, Form, FromFormValue, FromRequest},
     response::{Content, NamedFile, Redirect, Response},
-    Request,
+    Outcome, Request,
 };
 use rocket_contrib::databases::{database, diesel::SqliteConnection};
 use serde::{Deserialize, Serialize};
@@ -172,30 +171,25 @@ fn numbers_drawn_today(conn: &DbConn) -> Vec<Numbers> {
         "select * from numbers where substr(draw_date, 0,11)
         LIKE date('now', 'localtime') order by id asc",
     )
-    .load::<Numbers>(&**conn) .unwrap()
+    .load::<Numbers>(&**conn)
+    .unwrap()
 }
 
 fn winner_claim_add(conn: &DbConn, name: String, how: i32) -> QueryResult<usize> {
-    let new_winner = NewWinner{
-        name,
-        how,
-    };
+    let new_winner = NewWinner { name, how };
     diesel::insert_into(winner::table)
         .values(new_winner)
         .execute(&**conn)
 }
 
 fn winner_claims(conn: &DbConn) -> Vec<Winner> {
-    diesel::sql_query(
-        "select * from winner order by rowid DESC",
-    )
-    .load::<Winner>(&**conn)
-    .unwrap()
+    diesel::sql_query("select * from winner order by rowid DESC")
+        .load::<Winner>(&**conn)
+        .unwrap()
 }
 
 fn banko_notify(conn: &DbConn, name: String, how: i32) -> String {
     dotenv().ok();
-    println!("Skal til at bygge en mail..");
     let how_string = match how {
         1 => "1 række.",
         2 => "2 rækker.",
@@ -204,16 +198,18 @@ fn banko_notify(conn: &DbConn, name: String, how: i32) -> String {
     };
     let body = format!("Hej!\n\n{} ansøger om gevinst for {}", name, how_string);
     let part = SinglePart::builder()
-         .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
-         .header(header::ContentTransferEncoding::Binary)
-         .body(body);
+        .header(header::ContentType(
+            "text/plain; charset=utf8".parse().unwrap(),
+        ))
+        .header(header::ContentTransferEncoding::Binary)
+        .body(body);
     let subject = format!("{} har vundet", name);
     let email = Message::builder()
         .from("Julebanko <julebanko@fair-it.dk>".parse().unwrap())
         .to(
             format!("{} <{}>", dotenv!("ADMIN_NAME"), dotenv!("ADMIN_MAIL"))
                 .parse()
-                .unwrap()
+                .unwrap(),
         )
         .subject(subject)
         .singlepart(part)
@@ -226,12 +222,11 @@ fn banko_notify(conn: &DbConn, name: String, how: i32) -> String {
         .unwrap()
         .credentials(creds)
         .build();
-    println!("Skal til at sende en mail..");
     match mailer.send(&email) {
         Ok(_) => {
             let _ = winner_claim_add(&conn, name, how);
             "ok".to_string()
-            },
+        }
         Err(e) => format!("Could not send email: {:?}", e),
     }
 }
@@ -275,10 +270,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for RemoteAddr {
 }
 
 #[get("/")]
-pub fn draw<'a>(conn: DbConn, session: Session, req: RemoteAddr) -> ContRes<'a> {
+pub fn draw<'a>(conn: DbConn, session: Session) -> ContRes<'a> {
     let mut context = create_context("draw");
-    let remote_ip = req.addr();
-    context.insert("remote_ip", &remote_ip);
     let mut session_user = String::new();
     session.tap(|sess| {
         for user in sess.iter().take(1) {
@@ -302,6 +295,15 @@ pub fn draw<'a>(conn: DbConn, session: Session, req: RemoteAddr) -> ContRes<'a> 
     context.insert("drawn_today", &drawn_today);
     respond_page("draw", context)
 }
+
+#[get("/error")]
+fn error<'a>(_session: Session, req: RemoteAddr) ->ContRes<'a> {
+    let mut context = create_context("error");
+    let remote_ip = req.addr();
+    context.insert("remote_ip", &remote_ip);
+    respond_page("error", context)
+}
+
 
 #[get("/add/<number>")]
 fn add_number(number: usize, conn: DbConn, session: Session) -> String {
@@ -339,14 +341,13 @@ fn add_number(number: usize, conn: DbConn, session: Session) -> String {
 
 #[post("/login", data = "<login_form>")]
 fn login(login_form: Form<UserLogin>, session: Session) -> Redirect {
-            if login_form.username == "admin" && login_form.password == "admin" {
-            session.tap(move |sess| {
+    if login_form.username == "admin" && login_form.password == "admin" {
+        session.tap(move |sess| {
             sess.push(login_form.username.to_string());
-            });
-        }
-        Redirect::found("/")
+        });
+    }
+    Redirect::found("/")
 }
-
 
 #[get("/winner")]
 pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
@@ -366,11 +367,19 @@ pub fn winner<'b>(conn: DbConn, session: Session) -> ContRes<'b> {
 }
 
 #[post("/banko", data = "<login_form>")]
-fn banko(login_form: Form<Banko>, _session: Session, conn: DbConn) -> Redirect {
-    let name: String = login_form.name.to_string();
-    let how: i32 = login_form.how;
-    let _res = banko_notify(&conn, name, how);
-    Redirect::found("/winner")
+fn banko(login_form: Form<Banko>, _session: Session, req: RemoteAddr, conn: DbConn) -> Redirect {
+    let remote_ip = req.addr();
+    dotenv().ok();
+    let allowed_ip = dotenv!("ALLOWED_IP").to_string();
+    dbg!(&allowed_ip, &remote_ip);
+    if remote_ip == allowed_ip {
+        let name: String = login_form.name.to_string();
+        let how: i32 = login_form.how;
+        let _res = banko_notify(&conn, name, how);
+        Redirect::found("/winner")
+    } else {
+        Redirect::found("/error")
+    }
 }
 
 #[get("/about")]
@@ -398,6 +407,7 @@ fn main() {
                 add_number,
                 banko,
                 draw,
+                error,
                 login,
                 winner,
                 crate::statics::robots_handler,
